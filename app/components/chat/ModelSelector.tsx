@@ -91,6 +91,7 @@ interface ModelSelectorProps {
   providerList: ProviderInfo[];
   apiKeys: Record<string, string>;
   modelLoading?: string;
+  chatStarted?: boolean;
 }
 
 // Helper function to determine if a model is likely free
@@ -116,7 +117,9 @@ export const ModelSelector = ({
   modelList,
   providerList,
   modelLoading,
+  chatStarted = false,
 }: ModelSelectorProps) => {
+  const dropdownPlacementClass = 'top-full mt-1';
   const [modelSearchQuery, setModelSearchQuery] = useState('');
   const [debouncedModelSearchQuery, setDebouncedModelSearchQuery] = useState('');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -132,6 +135,35 @@ export const ModelSelector = ({
   const providerOptionsRef = useRef<(HTMLDivElement | null)[]>([]);
   const providerDropdownRef = useRef<HTMLDivElement>(null);
   const [showFreeModelsOnly, setShowFreeModelsOnly] = useState(false);
+
+  const [maxHeight, setMaxHeight] = useState<number>(240);
+
+  useEffect(() => {
+    if (!isModelDropdownOpen && !isProviderDropdownOpen) {
+      return;
+    }
+
+    const updateMaxHeight = () => {
+      const activeRef = isModelDropdownOpen ? modelDropdownRef : providerDropdownRef;
+      const chatBoxElement = activeRef.current?.closest('.max-w-chat');
+      const buttonElement = activeRef.current;
+
+      if (chatBoxElement && buttonElement) {
+        const chatBoxRect = chatBoxElement.getBoundingClientRect();
+        const buttonRect = buttonElement.getBoundingClientRect();
+        const availableHeight = chatBoxRect.bottom - buttonRect.bottom - 16;
+        setMaxHeight(availableHeight > 100 ? availableHeight : 240);
+      }
+    };
+
+    const timer = setTimeout(updateMaxHeight, 0);
+
+    window.addEventListener('resize', updateMaxHeight);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateMaxHeight);
+    };
+  }, [isModelDropdownOpen, isProviderDropdownOpen]);
 
   type ConnectionStatus = 'unknown' | 'connected' | 'disconnected';
 
@@ -505,11 +537,15 @@ export const ModelSelector = ({
 
         {isProviderDropdownOpen && (
           <div
-            className="absolute z-20 w-full bottom-full mb-1 py-1 rounded-md border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg"
+            className={classNames(
+              "absolute z-20 w-full py-1 rounded-md border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg flex flex-col",
+              dropdownPlacementClass
+            )}
+            style={{ maxHeight: `${maxHeight}px` }}
             role="listbox"
             id="provider-listbox"
           >
-            <div className="px-2 pb-2">
+            <div className="px-2 pb-2 flex-shrink-0">
               <div className="relative">
                 <input
                   ref={providerSearchInputRef}
@@ -549,7 +585,7 @@ export const ModelSelector = ({
 
             <div
               className={classNames(
-                'max-h-60 overflow-y-auto',
+                'flex-1 overflow-y-auto',
                 'sm:scrollbar-none',
                 '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2',
                 '[&::-webkit-scrollbar-thumb]:bg-bolt-elements-borderColor',
@@ -675,11 +711,15 @@ export const ModelSelector = ({
 
         {isModelDropdownOpen && (
           <div
-            className="absolute z-10 w-full bottom-full mb-1 py-1 rounded-md border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg"
+            className={classNames(
+              "absolute z-10 w-full py-1 rounded-md border border-bolt-elements-borderColor bg-bolt-elements-background-depth-2 shadow-lg flex flex-col",
+              dropdownPlacementClass
+            )}
+            style={{ maxHeight: `${maxHeight}px` }}
             role="listbox"
             id="model-listbox"
           >
-            <div className="px-2 pb-2 space-y-2">
+            <div className="px-2 pb-2 space-y-2 flex-shrink-0">
               {/* Free Models Filter Toggle - Only show for OpenRouter */}
               {provider?.name === 'OpenRouter' && (
                 <div className="flex items-center gap-2">
@@ -756,7 +796,7 @@ export const ModelSelector = ({
 
             <div
               className={classNames(
-                'max-h-60 overflow-y-auto',
+                'flex-1 overflow-y-auto',
                 'sm:scrollbar-none',
                 '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2',
                 '[&::-webkit-scrollbar-thumb]:bg-bolt-elements-borderColor',

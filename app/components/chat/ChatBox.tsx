@@ -80,7 +80,7 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
       <div>
         <ClientOnly>
           {() => (
-            <div className={props.isModelSettingsCollapsed ? 'hidden' : ''}>
+            <div className={props.isModelSettingsCollapsed ? 'hidden' : 'mb-3'}>
               <ModelSelector
                 key={props.provider?.name + ':' + props.modelList.length}
                 model={props.model}
@@ -91,6 +91,7 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
                 providerList={props.providerList || (PROVIDER_LIST as ProviderInfo[])}
                 apiKeys={props.apiKeys}
                 modelLoading={props.isModelLoading}
+                chatStarted={props.chatStarted}
               />
               {(props.providerList || []).length > 0 &&
                 props.provider &&
